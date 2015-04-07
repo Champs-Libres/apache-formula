@@ -1,6 +1,6 @@
 {% from "apache/map.jinja" import apache with context %}
 
-{% set 'need_certificates' = False %}
+{% set need_certificates = False %}
 
 include:
   - apache
@@ -31,7 +31,7 @@ include:
 {% endif %}
 
 {% if 'TLS' in site %}
-{% set 'need_certificates' = True %}
+{% set need_certificates = True %}
 
 {{ apache.certificate_dir }}/{{ id }}:
   file.directory:
