@@ -78,4 +78,9 @@ a2ensite {{ id }}{{ apache.confext }}:
     - user: root
     - group: root
     - dir_mode: 644
+
+{{ apache.tls }}:
+  pkg.installed: []
+
+
 {% endfor %}
