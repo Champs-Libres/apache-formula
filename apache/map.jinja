@@ -2,9 +2,10 @@
     'Debian': {
         'server': 'apache2',
         'service': 'apache2',
-
+        'user': 'www-data',
+        'group': 'www-data',
         'mod_wsgi': 'libapache2-mod-wsgi',
-
+        'certificates_dir': '/etc/apache2/certificates',
         'vhostdir': '/etc/apache2/sites-available',
         'confdir': '/etc/apache2/conf.d',
         'confext': '',

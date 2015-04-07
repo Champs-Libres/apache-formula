@@ -75,6 +75,13 @@
     </Directory>
     {% endfor %}
 
+    {% if site.get('TLS') != False %}
+      GnuTLSEnable on
+
+      GnuTLSCertificateFile {{ apache.certificate_dir ~ '/' ~ id ~ '/' ~ id ~ '.crt' }}
+      GnuTLSKeyFile {{ apache.certificate_dir ~ '/' ~ id ~ '/key.pem' }}
+    {% endif %}
+
     {% if site.get('Formula_Append') %}
     {{ site.Formula_Append|indent(4) }}
     {% endif %}
