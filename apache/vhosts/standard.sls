@@ -33,31 +33,30 @@ include:
 {% if 'TLS' in site %}
 {% set need_certificates = True %}
 
-{{ apache.certificate_dir }}/{{ id }}:
-  file.directory:
-    - user: root
-    - group: root
-    - dir_mode: 644
-    - require:
-      - file: {{ apache.certificate_dir }}
-
-{{ apache.certificate_dir }}/{{ id }}/key.pem:
+{{ apache.certificates_dir }}/{{ id }}/key.pem:
   file.managed:
     - user: root
     - group: {{ apache.group }}
     - mode: 640
-    - contents_pillar: {{ site.tls.key }}
-    - require: 
-      - file: {{ apache.certificate_dir }}/{{ id }}
+    - template: jinja
+    - source: salt://apache/vhosts/key.tmpl
+    - id: {{ id }}
+    - makedirs: True
+#    - require: 
+#      - file: {{ apache.certificates_dir }}/{{ id }}
 
-{{ apache.certificate_dir }}/{{ id }}/{{ id }}.crt:
+{{ apache.certificates_dir }}/{{ id }}/{{ id }}.crt:
   file.managed:
     - user: root
     - group: root
     - mode: 644
-    - contents_pillar: {{ site.tls.crt }}
-    - require: 
-      - file: {{ apache.certificate_dir }}/{{ id }}
+    - template: jinja
+    - id: {{ id }}
+    - source: salt://apache/vhosts/crt.tmpl
+#    - contents_pillar: apache:{{ id }}:TLS:crt
+    - makedirs: True
+#    - require: 
+#      - file: {{ apache.certificates_dir }}/{{ id }}
     
 {% endif %}
 
@@ -72,8 +71,10 @@ a2ensite {{ id }}{{ apache.confext }}:
       - module: apache-reload
 {% endif %}
 
-{% if need_certificate %}
-{{ apache.certificate_dir }}:
+{% endfor %}
+
+{% if need_certificates %}
+{{ apache.certificates_dir }}:
   file.directory:
     - user: root
     - group: root
@@ -82,5 +83,22 @@ a2ensite {{ id }}{{ apache.confext }}:
 {{ apache.tls }}:
   pkg.installed: []
 
+a2enmod tls:
+  cmd.run:
+    - unless: ls /etc/apache2/mods-enabled/tls.load
+    - order: 225
+    - require:
+      - pkg: {{ apache.tls }}
+    - watch_in:
+      - module: apache-restart
+
+a2dismod ssl:
+  cmd.run:
+    - onlyif: ls /etc/apache2/mods-enabled/ssl.load
+    - order: 225
+    - require:
+      - pkg: {{ apache.tls }}
+    - watch_in:
+      - module: apache-restart
+
 {% endif %}
-{% endfor %}

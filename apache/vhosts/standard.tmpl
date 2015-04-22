@@ -2,9 +2,15 @@
 {% from "apache/map.jinja" import apache with context %}
 {% set sitename = site.get('ServerName', id) %}
 
+{%- if site.TLS is defined %}
+{%- set default_port = site.get('port', '443') %}
+{%- else %}
+{%- set default_port = site.get('port', '80') %}
+{%- endif %}
+
 {% set vals = {
     'interface': site.get('interface', '*'),
-    'port': site.get('port', '80'),
+    'port': site.get('port', default_port),
 
     'ServerName': sitename,
     'ServerAlias': site.get('ServerAlias', 'www.{0}'.format(sitename)),
@@ -31,6 +37,17 @@
         'AllowOverride': 'None',
     },
 } %}
+{%- if site.TLS is defined %}
+{# create a redirection to https protocol #}
+<VirtualHost *:80>
+       ServerName {{ vals.ServerName }}
+       {% if site.get('ServerAlias') != False %}ServerAlias {{ vals.ServerAlias }}{% endif %}
+
+       {% if site.get('ServerAdmin') != False %}ServerAdmin {{ vals.ServerAdmin }}{% endif %}
+
+       Redirect permanent / https://{{ vals.ServerName }}
+</VirtualHost>
+{%- endif %}
 
 <VirtualHost {{ vals.interface }}:{{ vals.port }}>
     ServerName {{ vals.ServerName }}
@@ -75,11 +92,11 @@
     </Directory>
     {% endfor %}
 
-    {% if site.get('TLS') != False %}
+    {% if site.TLS is defined %}
       GnuTLSEnable on
-
-      GnuTLSCertificateFile {{ apache.certificate_dir ~ '/' ~ id ~ '/' ~ id ~ '.crt' }}
-      GnuTLSKeyFile {{ apache.certificate_dir ~ '/' ~ id ~ '/key.pem' }}
+      GnuTLSPriorities NORMAL:!DHE-RSA:!DHE-DSS:!AES-256-CBC:%COMPAT
+      GnuTLSCertificateFile {{ apache.certificates_dir ~ '/' ~ id ~ '/' ~ id ~ '.crt' }}
+      GnuTLSKeyFile {{ apache.certificates_dir ~'/' ~ id ~ '/key.pem' }}
     {% endif %}
 
     {% if site.get('Formula_Append') %}
